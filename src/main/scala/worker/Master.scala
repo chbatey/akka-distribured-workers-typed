@@ -38,8 +38,7 @@ object Master {
       extends MasterCommand
   case class WorkFailed(workerId: String, workId: String) extends MasterCommand
 
-  // TODO make private command
-  case object Cleanup extends MasterCommand
+  private case object Cleanup extends MasterCommand
 
   // External commands
   case class SubmitWork(work: Work, replyTo: ActorRef[Master.Ack])
@@ -136,16 +135,15 @@ object Master {
 
               case RegisterWorker(workerId, replyTo) =>
                 if (workers.contains(workerId)) {
-                  // FIXME - remove classic
                   workers += (workerId -> workers(workerId)
                     .copy(
-                      ref = replyTo.toClassic,
+                      ref = replyTo,
                       staleWorkerDeadline = newStaleWorkerDeadline()
                     ))
                 } else {
                   ctx.log.info("Worker registered: {}", workerId)
                   val initialWorkerState = WorkerState(
-                    ref = replyTo.toClassic,
+                    ref = replyTo,
                     status = Idle,
                     staleWorkerDeadline = newStaleWorkerDeadline()
                   )

@@ -7,7 +7,6 @@ import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.Behaviors
 import akka.persistence.cassandra.testkit.CassandraLauncher
 import com.typesafe.config.{Config, ConfigFactory}
-import akka.actor.typed.scaladsl.adapter._
 
 object Main {
 
@@ -56,7 +55,7 @@ object Main {
     * start the shared journal, see below for details)
     */
   def startBackEnd(port: Int): Unit = {
-    val system = ActorSystem[Nothing](Behaviors.setup[Nothing](ctx => {
+    ActorSystem[Nothing](Behaviors.setup[Nothing](ctx => {
       MasterSingleton.singleton(ctx.system)
       Behaviors.empty
     }), "ClusterSystem", config(port, "back-end"))
@@ -67,9 +66,8 @@ object Main {
     */
   // #front-end
   def startFrontEnd(port: Int): Unit = {
-    import akka.actor.typed.scaladsl.adapter._
     ActorSystem[Nothing](Behaviors.setup[Nothing] { ctx =>
-      ctx.spawn(FrontEndTyped(), "front-end")
+      ctx.spawn(FrontEnd(), "front-end")
       ctx.spawn(WorkResultConsumer(), "consumer")
       Behaviors.empty
     }, "ClusterSystem", config(port, "front-end"))

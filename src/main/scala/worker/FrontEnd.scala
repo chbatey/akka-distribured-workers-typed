@@ -3,7 +3,7 @@ package worker
 import java.util.UUID
 import java.util.concurrent.ThreadLocalRandom
 
-import akka.actor.typed.{ActorRef => TActorRef}
+import akka.actor.typed._
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
 import akka.util.Timeout
@@ -17,9 +17,7 @@ import scala.util.Success
   * Dummy front-end that periodically sends a workload to the master.
   */
 // #front-end
-object FrontEndTyped {
-
-  import akka.actor.typed.scaladsl.adapter._
+object FrontEnd {
 
   sealed trait Command
   case object Tick extends Command
@@ -35,7 +33,7 @@ object FrontEndTyped {
   }
 
   def idle(workCounter: Int,
-           masterProxy: TActorRef[SubmitWork]): Behavior[Command] =
+           masterProxy: ActorRef[SubmitWork]): Behavior[Command] =
     Behaviors.withTimers { timer =>
       timer.startSingleTimer("tick", Tick, 5.seconds)
       Behaviors.receiveMessage {
@@ -48,7 +46,7 @@ object FrontEndTyped {
 
   def busy(workCounter: Int,
            workInProgress: Work,
-           masterProxy: TActorRef[SubmitWork]): Behavior[Command] =
+           masterProxy: ActorRef[SubmitWork]): Behavior[Command] =
     Behaviors.withTimers { timers =>
       Behaviors.setup { ctx =>
         def sendWork(work: Work): Unit = {
@@ -57,8 +55,8 @@ object FrontEndTyped {
             masterProxy,
             reply => SubmitWork(work, reply)
           ) {
-            case Success(value) => WorkAccepted
-            case Failure(t)     => Failed
+            case Success(_) => WorkAccepted
+            case Failure(_) => Failed
           }
         }
 

@@ -23,12 +23,12 @@ class Worker private (workerId: String,
                       workExecutorFactory: () => Behavior[DoWork]) {
   private val registerInterval = ctx.system.settings.config
     .getDuration("distributed-workers.worker-registration-interval")
-    .getSeconds
-    .seconds
+    .toNanos
+    .nano
 
   private val workAckTimeout = ctx.system.settings.config
     .getDuration("distributed-workers.work-ack-timeout")
-    .getNano
+    .toNanos
     .nano
 
   timers.startTimerAtFixedRate("register", Register, registerInterval)
@@ -84,6 +84,9 @@ class Worker private (workerId: String,
           ctx.log.info("Got work: {}", job)
           workExecutor ! WorkExecutor.DoWork(job, ctx.self)
           working(workId, workExecutor)
+
+        case Ack(_) =>
+          Behaviors.same
 
       } receiveSignal deregisterOnStop()
     }
@@ -149,7 +152,7 @@ class Worker private (workerId: String,
   */
 object Worker {
 
-  sealed trait WorkerCommand
+  sealed trait WorkerCommand extends CborSerializable
   case object WorkIsReady extends WorkerCommand
   case class Ack(id: String) extends WorkerCommand
   case class SubmitWork(work: Work) extends WorkerCommand

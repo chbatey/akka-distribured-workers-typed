@@ -12,6 +12,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-cluster-typed" % akkaVersion,
   "com.typesafe.akka" %% "akka-persistence-typed" % akkaVersion,
   "com.typesafe.akka" %% "akka-persistence-query" % akkaVersion,
+  "com.typesafe.akka" %% "akka-serialization-jackson" % akkaVersion,
   "com.typesafe.akka" %% "akka-persistence-cassandra" % cassandraPluginVersion,
   // this allows us to start cassandra from the sample
   "com.typesafe.akka" %% "akka-persistence-cassandra-launcher" % cassandraPluginVersion,

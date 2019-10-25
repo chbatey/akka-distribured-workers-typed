@@ -23,7 +23,7 @@ import scala.concurrent.duration.{Deadline, FiniteDuration, _}
   * The master actor keep tracks of all available workers, and all scheduled and ongoing work items
   */
 object Master {
-  sealed trait MasterCommand
+  sealed trait MasterCommand extends CborSerializable
   // Messages from Workers
   case class RegisterWorker(workerId: String, replyTo: ActorRef[WorkerCommand])
       extends MasterCommand
@@ -249,7 +249,7 @@ object Master {
 
   val ResultsTopic = "results"
 
-  case class Ack(workId: String)
+  case class Ack(workId: String) extends CborSerializable
 
   sealed trait WorkerStatus
   case object Idle extends WorkerStatus

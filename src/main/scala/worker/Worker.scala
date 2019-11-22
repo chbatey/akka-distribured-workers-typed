@@ -68,7 +68,7 @@ class Worker private (workerId: String,
     workExecutor: ActorRef[DoWork] = createWorkExecutor()
   ): Behavior[WorkerCommand] =
     Behaviors.setup[WorkerCommand] { ctx =>
-      Behaviors.receiveMessage[WorkerCommand] {
+      Behaviors.receiveMessage[WorkerCommand] { // FIXME not exhustive
         case Register =>
           masterProxy ! Master.RegisterWorker(workerId, ctx.self)
           Behaviors.same
@@ -94,7 +94,7 @@ class Worker private (workerId: String,
   def working(workId: String,
               workExecutor: ActorRef[DoWork]): Behavior[WorkerCommand] =
     Behaviors.setup { ctx =>
-      Behaviors.receiveMessage[WorkerCommand] {
+      Behaviors.receiveMessage[WorkerCommand] { // FIXME not exhaustive
         case Worker.WorkComplete(result) =>
           ctx.log.info("Work is complete. Result {}.", result)
           masterProxy ! Master

@@ -25,9 +25,9 @@ object Main {
 
       case Some(portString) if portString.matches("""\d+""") =>
         val port = portString.toInt
-        if (backEndPortRange.contains(port)) startBackEnd(port)
-        else if (frontEndPortRange.contains(port)) startFrontEnd(port)
-        else startWorker(port, args.lift(1).map(_.toInt).getOrElse(1))
+        if (backEndPortRange.contains(port)) start(port, "back-end")
+        else if (frontEndPortRange.contains(port)) start(port, "front-end")
+        else start(port, "worker", args.lift(1).map(_.toInt).getOrElse(1))
 
       case Some("cassandra") =>
         startCassandraDatabase()
@@ -39,16 +39,15 @@ object Main {
 
   def startClusterInSameJvm(): Unit = {
     startCassandraDatabase()
-
     // two backend nodes
-    startBackEnd(2551)
-    startBackEnd(2552)
+    start(2551, "back-end")
+    start(2552, "back-end")
     // two front-end nodes
-    startFrontEnd(3000)
-    startFrontEnd(3001)
+    start(3000, "front-end")
+    start(3001, "front-end")
     // two worker nodes with two worker actors each
-    startWorker(5001, 2)
-    startWorker(5002, 2)
+    start(5001, "worker", 2)
+    start(5002, "worker", 2)
   }
 
   def start(port: Int, role: String, workers: Int = 2): Unit = {

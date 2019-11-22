@@ -28,7 +28,7 @@ object FrontEnd {
   private def nextWorkId(): String = UUID.randomUUID().toString
 
   def apply(): Behavior[Command] = Behaviors.setup { ctx =>
-    val masterProxy = MasterSingleton.singleton(ctx.system)
+    val masterProxy = MasterSingleton.init(ctx.system)
     idle(0, masterProxy)
   }
 

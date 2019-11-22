@@ -14,7 +14,7 @@ object MasterSingleton {
   private val singletonRole = "back-end"
 
   // #singleton
-  def singleton(system: ActorSystem[_]): ActorRef[MasterCommand] = {
+  def init(system: ActorSystem[_]): ActorRef[MasterCommand] = {
     val workTimeout = system.settings.config
       .getDuration("distributed-workers.work-timeout")
       .getSeconds

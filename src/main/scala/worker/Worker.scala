@@ -31,7 +31,7 @@ class Worker private (workerId: String,
     .toNanos
     .nano
 
-  timers.startTimerAtFixedRate("register", Register, registerInterval)
+  timers.startTimerWithFixedDelay("register", Register, registerInterval)
 
   def createWorkExecutor(): ActorRef[DoWork] = {
     val supervised = Behaviors

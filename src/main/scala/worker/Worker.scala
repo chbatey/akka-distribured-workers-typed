@@ -4,7 +4,7 @@ import java.util.UUID
 
 import akka.actor.typed._
 import akka.actor.typed.scaladsl._
-import worker.Master.MasterCommand
+import worker.Master.Command
 import worker.Master.WorkerRequestsWork
 import worker.WorkExecutor.DoWork
 import worker.Worker.Ack
@@ -12,14 +12,14 @@ import worker.Worker.Register
 import worker.Worker.SubmitWork
 import worker.Worker.WorkIsReady
 import worker.Worker.WorkTimeout
-import worker.Worker.WorkerCommand
+import worker.Worker.Command
 
 import scala.concurrent.duration._
 
 class Worker private (workerId: String,
-                      masterProxy: ActorRef[MasterCommand],
-                      ctx: ActorContext[WorkerCommand],
-                      timers: TimerScheduler[WorkerCommand],
+                      masterProxy: ActorRef[Command],
+                      ctx: ActorContext[Command],
+                      timers: TimerScheduler[Command],
                       workExecutorFactory: () => Behavior[DoWork]) {
   private val registerInterval = ctx.system.settings.config
     .getDuration("distributed-workers.worker-registration-interval")
@@ -43,8 +43,8 @@ class Worker private (workerId: String,
   }
 
   def deregisterOnStop()
-    : PartialFunction[(scaladsl.ActorContext[WorkerCommand], Signal), Behavior[
-      WorkerCommand
+    : PartialFunction[(scaladsl.ActorContext[Command], Signal), Behavior[
+      Command
     ]] = {
     case (_, PostStop) =>
       ctx.log.info("Worker has stopped, de-registering")
@@ -54,8 +54,8 @@ class Worker private (workerId: String,
 
   def reportWorkFailedOnRestart(
     workId: String
-  ): PartialFunction[(scaladsl.ActorContext[WorkerCommand], Signal), Behavior[
-    WorkerCommand
+  ): PartialFunction[(scaladsl.ActorContext[Command], Signal), Behavior[
+    Command
   ]] = {
     case (_, Terminated(_)) =>
       ctx.log.info("Work executor terminated. Reporting failure")
@@ -66,9 +66,9 @@ class Worker private (workerId: String,
 
   def idle(
     workExecutor: ActorRef[DoWork] = createWorkExecutor()
-  ): Behavior[WorkerCommand] =
-    Behaviors.setup[WorkerCommand] { ctx =>
-      Behaviors.receiveMessage[WorkerCommand] { // FIXME not exhustive
+  ): Behavior[Command] =
+    Behaviors.setup[Command] { ctx =>
+      Behaviors.receiveMessage[Command] { // FIXME not exhustive
         case Register =>
           masterProxy ! Master.RegisterWorker(workerId, ctx.self)
           Behaviors.same
@@ -92,9 +92,9 @@ class Worker private (workerId: String,
     }
 
   def working(workId: String,
-              workExecutor: ActorRef[DoWork]): Behavior[WorkerCommand] =
+              workExecutor: ActorRef[DoWork]): Behavior[Command] =
     Behaviors.setup { ctx =>
-      Behaviors.receiveMessage[WorkerCommand] { // FIXME not exhaustive
+      Behaviors.receiveMessage[Command] { // FIXME not exhaustive
         case Worker.WorkComplete(result) =>
           ctx.log.info("Work is complete. Result {}.", result)
           masterProxy ! Master
@@ -119,9 +119,9 @@ class Worker private (workerId: String,
     result: String,
     workId: String,
     workExecutor: ActorRef[DoWork]
-  ): Behavior[WorkerCommand] =
+  ): Behavior[Command] =
     Behaviors.setup { ctx =>
-      Behaviors.receiveMessage[WorkerCommand] {
+      Behaviors.receiveMessage[Command] {
         case WorkTimeout =>
           ctx.log.info("No ack from master, resending work result")
           masterProxy ! Master
@@ -152,21 +152,21 @@ class Worker private (workerId: String,
   */
 object Worker {
 
-  sealed trait WorkerCommand extends CborSerializable
-  case object WorkIsReady extends WorkerCommand
-  case class Ack(id: String) extends WorkerCommand
-  case class SubmitWork(work: Work) extends WorkerCommand
-  case class WorkComplete(result: String) extends WorkerCommand
+  sealed trait Command extends CborSerializable
+  case object WorkIsReady extends Command
+  case class Ack(id: String) extends Command
+  case class SubmitWork(work: Work) extends Command
+  case class WorkComplete(result: String) extends Command
 
-  private case object Register extends WorkerCommand
-  private case object WorkTimeout extends WorkerCommand
+  private case object Register extends Command
+  private case object WorkTimeout extends Command
 
   def apply(
-    masterProxy: ActorRef[Master.MasterCommand],
-    workerId: String = UUID.randomUUID().toString,
-    workExecutorFactory: () => Behavior[DoWork] = () => WorkExecutor()
-  ): Behavior[WorkerCommand] = Behaviors.setup[WorkerCommand] { ctx =>
-    Behaviors.withTimers { timers: TimerScheduler[WorkerCommand] =>
+             masterProxy: ActorRef[Master.Command],
+             workerId: String = UUID.randomUUID().toString,
+             workExecutorFactory: () => Behavior[DoWork] = () => WorkExecutor()
+  ): Behavior[Command] = Behaviors.setup[Command] { ctx =>
+    Behaviors.withTimers { timers: TimerScheduler[Command] =>
       masterProxy ! Master.RegisterWorker(workerId, ctx.self)
 
       Behaviors

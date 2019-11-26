@@ -5,7 +5,7 @@ import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
 import org.scalatest.WordSpecLike
-import worker.Master.MasterCommand
+import worker.Master.Command
 import worker.Master.WorkFailed
 import worker.Master.WorkIsDone
 import worker.Master.WorkerRequestsWork
@@ -17,14 +17,14 @@ class WorkerSpec extends ScalaTestWithActorTestKit with WordSpecLike {
   val workerId = "id"
   "A Worker" should {
     "register with the master" in {
-      val master = createTestProbe[MasterCommand]()
+      val master = createTestProbe[Command]()
       spawn(Worker(master.ref, workerId))
       val registration = master.expectMessageType[Master.RegisterWorker]
       registration.workerId shouldEqual workerId
     }
 
     "request work when work is ready" in {
-      val master = createTestProbe[MasterCommand]()
+      val master = createTestProbe[Command]()
       val worker = spawn(Worker(master.ref, workerId))
       master.expectMessageType[Master.RegisterWorker]
       worker ! Worker.WorkIsReady
@@ -32,7 +32,7 @@ class WorkerSpec extends ScalaTestWithActorTestKit with WordSpecLike {
     }
 
     "report work is done until ack" in {
-      val master = createTestProbe[MasterCommand]()
+      val master = createTestProbe[Command]()
       val worker = spawn(Worker(master.ref, workerId))
       val workId = "work1"
       master.expectMessageType[Master.RegisterWorker]
@@ -61,7 +61,7 @@ class WorkerSpec extends ScalaTestWithActorTestKit with WordSpecLike {
           }
         })
 
-      val master = createTestProbe[MasterCommand]()
+      val master = createTestProbe[Command]()
       val worker = spawn(
         Worker(
           master.ref,

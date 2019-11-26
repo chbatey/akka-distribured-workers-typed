@@ -6,7 +6,7 @@ import akka.cluster.typed.ClusterSingleton
 
 import scala.concurrent.duration._
 import akka.cluster.typed._
-import worker.Master.MasterCommand
+import worker.Master.Command
 
 object MasterSingleton {
 
@@ -14,7 +14,7 @@ object MasterSingleton {
   private val singletonRole = "back-end"
 
   // #singleton
-  def init(system: ActorSystem[_]): ActorRef[MasterCommand] = {
+  def init(system: ActorSystem[_]): ActorRef[Command] = {
     val workTimeout = system.settings.config
       .getDuration("distributed-workers.work-timeout")
       .getSeconds

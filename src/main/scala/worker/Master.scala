@@ -14,7 +14,7 @@ import akka.actor.typed.scaladsl.adapter._
 import worker.WorkState.WorkCompleted
 import worker.WorkState.WorkStarted
 import worker.WorkState.WorkerFailed
-import worker.Worker.WorkerCommand
+import worker.Worker.Command
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.duration.{Deadline, FiniteDuration, _}
@@ -23,28 +23,28 @@ import scala.concurrent.duration.{Deadline, FiniteDuration, _}
   * The master actor keep tracks of all available workers, and all scheduled and ongoing work items
   */
 object Master {
-  sealed trait MasterCommand extends CborSerializable
+  sealed trait Command extends CborSerializable
   // Messages from Workers
-  case class RegisterWorker(workerId: String, replyTo: ActorRef[WorkerCommand])
-      extends MasterCommand
-  case class DeRegisterWorker(workerId: String) extends MasterCommand
+  case class RegisterWorker(workerId: String, replyTo: ActorRef[Command])
+      extends Command
+  case class DeRegisterWorker(workerId: String) extends Command
   case class WorkerRequestsWork(workerId: String,
                                 replyTo: ActorRef[Worker.SubmitWork])
-      extends MasterCommand
+      extends Command
   case class WorkIsDone(workerId: String,
                         workId: String,
                         result: Any,
                         replyTo: ActorRef[Worker.Ack])
-      extends MasterCommand
-  case class WorkFailed(workerId: String, workId: String) extends MasterCommand
+      extends Command
+  case class WorkFailed(workerId: String, workId: String) extends Command
 
-  private case object Cleanup extends MasterCommand
+  private case object Cleanup extends Command
 
   // External commands
   case class SubmitWork(work: Work, replyTo: ActorRef[Master.Ack])
-      extends MasterCommand
+      extends Command
 
-  def apply(workTimeout: FiniteDuration): Behavior[MasterCommand] =
+  def apply(workTimeout: FiniteDuration): Behavior[Command] =
     Behaviors.setup { ctx =>
       Behaviors.withTimers { timers =>
         timers.startSingleTimer("cleanup", Cleanup, workTimeout / 2)
@@ -84,7 +84,7 @@ object Master {
             // ok, might happen after standby recovery, worker state is not persisted
           }
 
-        EventSourcedBehavior[MasterCommand, WorkDomainEvent, WorkState](
+        EventSourcedBehavior[Command, WorkDomainEvent, WorkState](
           persistenceId = PersistenceId.ofUniqueId("master"),
           emptyState = WorkState.empty,
           commandHandler = (workState, command) => {
@@ -254,7 +254,7 @@ object Master {
   sealed trait WorkerStatus
   case object Idle extends WorkerStatus
   case class Busy(workId: String, deadline: Deadline) extends WorkerStatus
-  case class WorkerState(ref: ActorRef[WorkerCommand],
+  case class WorkerState(ref: ActorRef[Command],
                          status: WorkerStatus,
                          staleWorkerDeadline: Deadline)
 

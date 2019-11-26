@@ -18,7 +18,7 @@ object WorkState {
   case class WorkStarted(workId: String) extends WorkDomainEvent
   case class WorkCompleted(workId: String, result: Any) extends WorkDomainEvent
   case class WorkerFailed(workId: String) extends WorkDomainEvent
-  case class WorkerTimedOut(workId: String) extends WorkDomainEvent
+  case class WorkTimedOut(workId: String) extends WorkDomainEvent
   // #events
 }
 
@@ -65,7 +65,7 @@ case class WorkState private (private val pendingWork: Queue[Work],
         workInProgress = workInProgress - workId
       )
 
-    case WorkerTimedOut(workId) ⇒
+    case WorkTimedOut(workId) ⇒
       copy(
         pendingWork = pendingWork enqueue workInProgress(workId),
         workInProgress = workInProgress - workId
